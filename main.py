@@ -27,6 +27,7 @@ remotefile='Documents/CS293B/'
 pred = ''
 conf = ''
 time = ''
+mod = 'Rock, Paper, Scissors'
 
 def conn():
   global SOCK
@@ -37,7 +38,10 @@ def send():
   os.system('scp "%s" "%s:%s"' % (localfile, remotehost, remotefile) )
 
 def classify():
-  SOCK.send(b'class')
+    if (mod == "Rock, Paper, Scissors"):
+        SOCK.send(b'clas0')
+    else:
+        SOCK.send(b'clas1')
 
 def close():
   # Send close msg to server
@@ -64,16 +68,17 @@ class RobotStateDisplay(cozmo.annotate.Annotator):
         print_line('S: Reverse')
         print_line('A: Left')
         print_line('D: Right')
-        print_line('Shift: Speed')
         print_line('')
         print_line('T: Camera Up')
         print_line('G: Camera Down')
         print_line('')
+        print_line('Shift: Model')
         print_line('Ctrl: Classify')
         print_line('Alt: Shut Down')
         print_line('')
 
         # Classify
+        print_line('Model: <%s>' % mod)
         print_line('Object Classification: <%s>' % pred)
         print_line('Confidence: <%s>' % conf)
         print_line('Time: <%s> ms' % time)
@@ -116,16 +121,14 @@ class RemoteControlCozmo:
         if is_alt_down:
             close()
 
-        # Update desired speed based on shift being held
-        was_go_fast = self.go_fast
-        self.go_fast = is_shift_down
-        speed_changed = was_go_fast != self.go_fast
-
+        # Update model
+        if (is_shift_down):
+            self.change_model()
 
         # Classify image
         if is_ctrl_down:
-            self.take_photos("Scissors")
-            #self.run_classify()
+            #self.take_photos("Paper", 600)
+            self.run_classify()
 
         # Update state of driving intent from keyboard, and if anything changed then call update_driving
         update_driving = True
@@ -138,8 +141,7 @@ class RemoteControlCozmo:
         elif key_code == ord('D'):
             self.turn_right = is_key_down
         else:
-            if not speed_changed:
-                update_driving = False
+            update_driving = False
 
         # Update state of head move intent from keyboard, and if anything changed then call update_head
         update_head = True
@@ -148,14 +150,20 @@ class RemoteControlCozmo:
         elif key_code == ord('G'):
             self.head_down = is_key_down
         else:
-            if not speed_changed:
-                update_head = False
+            update_head = False
 
         # Update driving, head and lift as appropriate
         if update_driving:
             self.update_mouse_driving()
         if update_head:
             self.update_head()
+
+    def change_model(self):
+        global mod
+        if (mod == "ImageNet"):
+            mod = "Rock, Paper, Scissors"
+        else:
+            mod = "ImageNet"
 
     def run_classify(self):
         global pred
@@ -169,7 +177,7 @@ class RemoteControlCozmo:
         # send to raspberry pi
         send()
             
-        # classify
+        # classify image
         classify()
             
         # results
@@ -180,20 +188,25 @@ class RemoteControlCozmo:
         time = res[2][:-1]
         print('Received', repr(data))
 
-    # Take 5,000 photos of rock, paper or scissors
-    def take_photos(self, rps):
+    # Take 300 photos of rock, paper or scissors
+    # Pause 1 second between photos
+    def take_photos(self, rps, idx):
         path = "/Users/dweinflash/Documents/UCSB/CS293B/Project/TestImages/"
-        num = 0
+        total = idx + 300
         
-        print(rps)
-        timer.sleep(5)
-        print("Taking photos..")
+        file_start = rps + str(idx) + ".jpeg"
+        file_end = rps + str(total) + ".jpeg"
 
-        while (num < 5000):
-            filename = rps+str(num)+".jpeg"
+        print(file_start + " - " + file_end)
+        timer.sleep(3)
+
+        while (idx < total):
+            filename = rps+str(idx)+".jpeg"
             latest_image = self.cozmo.world.latest_image.raw_image
             latest_image.convert('L').save(path+rps+"/"+filename)
-            num += 1
+            idx += 1
+            print(idx)
+            timer.sleep(1)
 
         print("Done!")
 
