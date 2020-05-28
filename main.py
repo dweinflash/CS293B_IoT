@@ -127,7 +127,7 @@ class RemoteControlCozmo:
 
         # Classify image
         if is_ctrl_down:
-            #self.take_photos("Paper", 600)
+            #self.take_photos("Scissors", 900, 1200)
             self.run_classify()
 
         # Update state of driving intent from keyboard, and if anything changed then call update_driving
@@ -188,19 +188,19 @@ class RemoteControlCozmo:
         time = res[2][:-1]
         print('Received', repr(data))
 
-    # Take 300 photos of rock, paper or scissors
+    # Take photos of rock, paper or scissors
     # Pause 1 second between photos
-    def take_photos(self, rps, idx):
+    def take_photos(self, rps, start, end):
         path = "/Users/dweinflash/Documents/UCSB/CS293B/Project/TestImages/"
-        total = idx + 300
+        idx = start
         
-        file_start = rps + str(idx) + ".jpeg"
-        file_end = rps + str(total) + ".jpeg"
+        file_start = rps + str(start) + ".jpeg"
+        file_end = rps + str(end) + ".jpeg"
 
         print(file_start + " - " + file_end)
-        timer.sleep(3)
+        timer.sleep(5)
 
-        while (idx < total):
+        while (idx < end):
             filename = rps+str(idx)+".jpeg"
             latest_image = self.cozmo.world.latest_image.raw_image
             latest_image.convert('L').save(path+rps+"/"+filename)
